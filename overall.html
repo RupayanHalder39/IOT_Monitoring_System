@@ -6,7 +6,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>All Data</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Sharp" rel="stylesheet" />
+  <script src="http://localhost:4115/config.js"></script>
+  <link rel="stylesheet" href="./roomstyle.css" />
+  <script>
+    if (!window.__DEV_MODE__) {
+      const iconLink = document.createElement('link');
+      iconLink.rel = 'stylesheet';
+      iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Symbols+Sharp';
+      document.head.appendChild(iconLink);
+    }
+  </script>
   <link rel="stylesheet" href="./style.css" />
   <style>
     .container {
@@ -266,7 +275,7 @@
   <script>
     // Function to fetch data from the API and update the HTML content
     function fetchDataAndUpdate(roomName) {
-      fetch(`https://trackingdevice.info/SATL/live-data.php?room=${roomName}`)
+      fetch(`http://localhost:4115/api/live-data?room=${roomName}`)
         .then(response => response.json())
         .then(data => {
           document.getElementById(`temperature-${roomName}`).textContent = data.temperature + '°';
@@ -283,8 +292,8 @@
       rooms.forEach(room => fetchDataAndUpdate(room));
     }
 
-    // Update rooms data every 100 ms
-    setInterval(updateRoomsData, 100);
+    // Update rooms data every 60 seconds
+    setInterval(updateRoomsData, 60000);
 
     // Initial update when the page loads
     updateRoomsData();

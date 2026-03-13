@@ -44,9 +44,26 @@ themeToggler.addEventListener("click", () => {
   updateChartsBackground();
 });
 
+const DEV_MODE = typeof window !== "undefined" && window.__DEV_MODE__ === true;
+const CHARTS_ENABLED = !DEV_MODE;
+
+if (!CHARTS_ENABLED) {
+  if (typeof window !== "undefined") {
+    window.Plotly = window.Plotly || {
+      newPlot: function () {},
+      update: function () {},
+      relayout: function () {},
+      react: function () {}
+    };
+  }
+}
+
 /*
   Plotly.js graph and chart setup code
 */
+if (typeof Plotly === "undefined") {
+  console.warn("Plotly is not loaded; charts will be disabled.");
+}
 var temperatureHistoryDiv = document.getElementById("temperature-history");
 var humidityHistoryDiv = document.getElementById("humidity-history");
 var pressureHistoryDiv = document.getElementById("gas-history");

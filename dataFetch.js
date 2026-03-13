@@ -3,7 +3,7 @@ const roomNumber = urlParams.get('room') || '1'; // Default to Room 1 if no room
 
 // Function to live-update values of temperature, humidity, gas, and oxygen
 function updateValues() {
-    fetch(`https://trackingdevice.info/SATL/live-data.php?room=room${roomNumber}`)
+    fetch(`http://localhost:4115/api/live-data?room=room${roomNumber}`)
       .then(response => response.json())
       .then(data => {
         document.getElementById('temperature').textContent = data.temperature;
@@ -18,14 +18,14 @@ function updateValues() {
 
 setInterval(() => {
   updateValues();
-}, 90); //Update data at 90 ms rate
+}, 60000); // Update data every 60 seconds
 
 // Update room title
 document.getElementById('room-title').textContent = `Room ${roomNumber}`;
 
 async function fetchHistoricalData(type) {
   try {
-    const response = await fetch(`https://trackingdevice.info/SATL/all-data.php?room=room${roomNumber}&type=${type}`);
+    const response = await fetch(`http://localhost:4115/api/all-data?room=room${roomNumber}&type=${type}`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -99,9 +99,8 @@ async function main() {
 
   for (const type of types) {
     await updateGraph(type); // Initial update for each type
-    setInterval(() => updateGraph(type), 500); // Update every 500 ms for each type
+    setInterval(() => updateGraph(type), 60000); // Update every 60 seconds for each type
   }
 }
 
 main();
-

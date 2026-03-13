@@ -135,7 +135,8 @@ function jsonToData(jsonMessage) { //This function seperates the json data recei
     const { temperature, humidity, gas, oxygen } = jsonData;
     return [temperature, humidity, gas, oxygen];
   } catch (error) {
-    console.error('Error parsing JSON data:', error);
+    const message = error && error.stack ? error.stack : String(error);
+    console.error(`[mqtt-listener.js] Error parsing JSON data:\n${message}`);
   }
 }
 
@@ -168,13 +169,12 @@ function connectToBroker() { //This function connects to Broker server and liste
   });
 
   mqttClient.on("message", (topic, message, packet) => { //New message on a perticular topic
-    console.log(
-      "Payload: " + message.toString() + "\nOn topic: " + topic
-    );
+    const payload = message ? message.toString() : '';
+    console.log(`[mqtt-listener.js] ${new Date().toISOString()} topic=${topic} payload=${payload}`);
 
     if (topic == '/SATL/room1') { //Topic detection
       var room = 'room1';
-      [temperature, humidity, gas, oxygen] = jsonToData(message.toString()); //JSON to variable
+      [temperature, humidity, gas, oxygen] = jsonToData(payload); //JSON to variable
       updateData(temperature, humidity, gas, oxygen, room); //Update instantaneous data to a single data row
       if(flag1 == 1){
         dataToWirehouse(temperature, humidity, gas, oxygen, room); //Storing all data to database after certain time interval
@@ -182,7 +182,7 @@ function connectToBroker() { //This function connects to Broker server and liste
       }
     } else if (topic == '/SATL/room2') {
       var room = 'room2';
-      [temperature, humidity, gas, oxygen] = jsonToData(message.toString()); //JSON to variable
+      [temperature, humidity, gas, oxygen] = jsonToData(payload); //JSON to variable
       updateData(temperature, humidity, gas, oxygen, room); //Update instantaneous data to a single data row
       if(flag2 == 1){
         dataToWirehouse(temperature, humidity, gas, oxygen, room); //Storing all data to database after certain time interval
@@ -190,7 +190,7 @@ function connectToBroker() { //This function connects to Broker server and liste
       }
     } else if (topic == '/SATL/room3') {
       var room = 'room3';
-      [temperature, humidity, gas, oxygen] = jsonToData(message.toString()); //JSON to variable
+      [temperature, humidity, gas, oxygen] = jsonToData(payload); //JSON to variable
       updateData(temperature, humidity, gas, oxygen, room); //Update instantaneous data to a single data row
       if(flag3 == 1){
         dataToWirehouse(temperature, humidity, gas, oxygen, room); //Storing all data to database after certain time interval
@@ -198,7 +198,7 @@ function connectToBroker() { //This function connects to Broker server and liste
       }
     } else if (topic == '/SATL/room4') {
       var room = 'room4';
-      [temperature, humidity, gas, oxygen] = jsonToData(message.toString()); //JSON to variable
+      [temperature, humidity, gas, oxygen] = jsonToData(payload); //JSON to variable
       updateData(temperature, humidity, gas, oxygen, room); //Update instantaneous data to a single data row
       if(flag4 == 1){
         dataToWirehouse(temperature, humidity, gas, oxygen, room); //Storing all data to database after certain time interval
@@ -408,5 +408,4 @@ function dataStorageScheduler() {
 
 // Call the scheduler every hour
 setInterval(dataStorageScheduler, 3600000); // 3600000 milliseconds = 1 hour
-
 

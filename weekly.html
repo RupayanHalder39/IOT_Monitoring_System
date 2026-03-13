@@ -6,7 +6,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Weekly Report</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Sharp" rel="stylesheet" />
+  <script src="http://localhost:4115/config.js"></script>
+  <link rel="stylesheet" href="./weeklystyle.css" />
+  <script>
+    if (!window.__DEV_MODE__) {
+      const iconLink = document.createElement('link');
+      iconLink.rel = 'stylesheet';
+      iconLink.href = 'https://fonts.googleapis.com/icon?family=Material+Symbols+Sharp';
+      document.head.appendChild(iconLink);
+    }
+  </script>
   <link rel="stylesheet" href="./weeklystyle.css" />
   <style>
     .container {
@@ -104,7 +113,7 @@
         `;
         container.appendChild(box);
 
-        fetch(`https://trackingdevice.info/SATL/daily-data.php?room_no=room1&timestamp=${date.toISOString().slice(0, 10)}`)
+        fetch(`http://localhost:4115/api/daily-data?room_no=room1&timestamp=${date.toISOString().slice(0, 10)}`)
           .then(response => response.json())
           .then(data => {
             const roomData = data[0];
