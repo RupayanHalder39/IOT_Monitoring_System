@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 const pool = require('./db');
 
 const app = express();
@@ -24,8 +25,42 @@ const useHTTPS = false; // Change to true to use HTTPS instead of HTTPS
 // Frontend config for dev mode
 app.get('/config.js', (req, res) => {
   const devMode = String(process.env.DEV_MODE || '').toLowerCase() === 'true';
+  const autoRotate = String(process.env.AUTO_ROTATE_ROOMS || '').toLowerCase() === 'true';
+  const rotateInterval = Number(process.env.ROTATE_INTERVAL_MS || '10000');
+  const pollInterval = Number(process.env.POLL_INTERVAL_MS || '60000');
+  const apiBase = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+  const reactUi = String(process.env.REACT_UI || '').toLowerCase() === 'true';
+  const reactUiDevUrl = process.env.REACT_UI_DEV_URL || 'http://localhost:5173';
   res.setHeader('Content-Type', 'application/javascript');
-  res.end(`window.__DEV_MODE__ = ${devMode ? 'true' : 'false'};`);
+  res.end(
+    `window.__DEV_MODE__ = ${devMode ? 'true' : 'false'};` +
+    `window.__AUTO_ROTATE__ = ${autoRotate ? 'true' : 'false'};` +
+    `window.__ROTATE_INTERVAL_MS__ = ${Number.isFinite(rotateInterval) ? rotateInterval : 10000};` +
+    `window.__POLL_INTERVAL_MS__ = ${Number.isFinite(pollInterval) ? pollInterval : 60000};` +
+    `window.__API_BASE_URL__ = "${apiBase}";` +
+    `window.__REACT_UI__ = ${reactUi ? 'true' : 'false'};` +
+    `window.__REACT_UI_DEV_URL__ = "${reactUiDevUrl}";`
+  );
+});
+
+// JSON config for modern clients (React)
+app.get('/config.json', (req, res) => {
+  const devMode = String(process.env.DEV_MODE || '').toLowerCase() === 'true';
+  const autoRotate = String(process.env.AUTO_ROTATE_ROOMS || '').toLowerCase() === 'true';
+  const rotateInterval = Number(process.env.ROTATE_INTERVAL_MS || '10000');
+  const pollInterval = Number(process.env.POLL_INTERVAL_MS || '60000');
+  const apiBase = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+  const reactUi = String(process.env.REACT_UI || '').toLowerCase() === 'true';
+  const reactUiDevUrl = process.env.REACT_UI_DEV_URL || 'http://localhost:5173';
+  res.json({
+    devMode,
+    autoRotate,
+    rotateIntervalMs: Number.isFinite(rotateInterval) ? rotateInterval : 10000,
+    pollIntervalMs: Number.isFinite(pollInterval) ? pollInterval : 60000,
+    apiBase,
+    reactUi,
+    reactUiDevUrl
+  });
 });
 
 // Load SSL/TLS certificates
@@ -195,6 +230,19 @@ app.get('/api/daily-data', (req, res) => {
 
 // Create HTTP or HTTPS server based on configuration
 const server = useHTTPS ? https.createServer(options, app) : http.createServer(app);
+
+// React UI serving (optional)
+const reactUiEnabled = String(process.env.REACT_UI || '').toLowerCase() === 'true';
+const reactUiDevUrl = process.env.REACT_UI_DEV_URL || 'http://localhost:5173';
+const reactDist = path.join(__dirname, 'frontend', 'dist');
+const reactIndex = path.join(reactDist, 'index.html');
+
+if (reactUiEnabled && fs.existsSync(reactDist)) {
+  app.use(express.static(reactDist));
+  app.get('/ui', (req, res) => res.sendFile(reactIndex));
+} else if (reactUiEnabled) {
+  app.get('/ui', (req, res) => res.redirect(reactUiDevUrl));
+}
 
 server.listen(PORT, () => {
     console.log(`API server listening on port ${PORT}`);

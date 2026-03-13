@@ -1,11 +1,26 @@
-const urlParams = new URLSearchParams(window.location.search);
-const roomNumber = urlParams.get('room') || '1'; // Default to Room 1 if no room parameter is provided
+function getRoomFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('room') || '1';
+}
+
+let roomNumber = getRoomFromUrl(); // Default to Room 1 if no room parameter is provided
+const API_BASE = typeof window !== 'undefined' && window.__API_BASE_URL__
+  ? window.__API_BASE_URL__
+  : 'http://localhost:4115';
+const POLL_INTERVAL_MS = typeof window !== 'undefined' && Number(window.__POLL_INTERVAL_MS__) > 0
+  ? Number(window.__POLL_INTERVAL_MS__)
+  : 60000;
 
 // Function to live-update values of temperature, humidity, gas, and oxygen
 function updateValues() {
-    fetch(`http://localhost:4115/api/live-data?room=room${roomNumber}`)
+    fetch(`${API_BASE}/api/live-data?room=room${roomNumber}&_ts=${Date.now()}`, {
+      cache: 'no-store'
+    })
       .then(response => response.json())
       .then(data => {
+        if (!data || data.error) {
+          throw new Error(data && data.error ? data.error : 'No data');
+        }
         document.getElementById('temperature').textContent = data.temperature;
         document.getElementById('humidity').textContent = data.humidity;
         document.getElementById('pressure').textContent = data.gas;
@@ -13,19 +28,41 @@ function updateValues() {
       })
       .catch(error => {
         console.error('Error fetching live data:', error);
+        document.getElementById('temperature').textContent = 'N/A';
+        document.getElementById('humidity').textContent = 'N/A';
+        document.getElementById('pressure').textContent = 'N/A';
+        document.getElementById('altitude').textContent = 'N/A';
       });
 }
 
 setInterval(() => {
   updateValues();
-}, 60000); // Update data every 60 seconds
+}, POLL_INTERVAL_MS); // Update data at configured interval
 
-// Update room title
+function setRoom(newRoomNumber, updateUrl = true) {
+  roomNumber = String(newRoomNumber);
+  document.getElementById('room-title').textContent = `Room ${roomNumber}`;
+  if (updateUrl) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomNumber);
+    window.history.replaceState({}, '', url.toString());
+  }
+  updateValues();
+  // Trigger graph refresh for current room
+  const types = ['temperature', 'humidity', 'gas', 'oxygen'];
+  types.forEach(type => updateGraph(type));
+}
+
+// Update room title on load
 document.getElementById('room-title').textContent = `Room ${roomNumber}`;
+// Fetch initial values immediately on load
+updateValues();
 
 async function fetchHistoricalData(type) {
   try {
-    const response = await fetch(`http://localhost:4115/api/all-data?room=room${roomNumber}&type=${type}`);
+    const response = await fetch(`${API_BASE}/api/all-data?room=room${roomNumber}&type=${type}&_ts=${Date.now()}`, {
+      cache: 'no-store'
+    });
     const data = await response.json();
     return data;
   } catch (error) {
@@ -99,8 +136,27 @@ async function main() {
 
   for (const type of types) {
     await updateGraph(type); // Initial update for each type
-    setInterval(() => updateGraph(type), 60000); // Update every 60 seconds for each type
+    setInterval(() => updateGraph(type), POLL_INTERVAL_MS); // Update at configured interval
   }
 }
 
 main();
+
+// Auto-rotate rooms if enabled
+const autoRotate = typeof window !== 'undefined' && window.__AUTO_ROTATE__ === true;
+const rotateIntervalMs = typeof window !== 'undefined' && Number(window.__ROTATE_INTERVAL_MS__) > 0
+  ? Number(window.__ROTATE_INTERVAL_MS__)
+  : 10000;
+
+if (autoRotate) {
+  setInterval(() => {
+    const current = parseInt(roomNumber, 10) || 1;
+    const next = current >= 4 ? 1 : current + 1;
+    setRoom(next, true);
+  }, rotateIntervalMs);
+}
+
+// If user navigates with back/forward
+window.addEventListener('popstate', () => {
+  setRoom(getRoomFromUrl(), false);
+});

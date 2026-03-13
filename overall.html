@@ -274,16 +274,27 @@
 
   <script>
     // Function to fetch data from the API and update the HTML content
+    const API_BASE = window.__API_BASE_URL__ || 'http://localhost:4115';
+
     function fetchDataAndUpdate(roomName) {
-      fetch(`http://localhost:4115/api/live-data?room=${roomName}`)
+      fetch(`${API_BASE}/api/live-data?room=${roomName}&_ts=${Date.now()}`, { cache: 'no-store' })
         .then(response => response.json())
         .then(data => {
+          if (!data || data.error) {
+            throw new Error(data && data.error ? data.error : 'No data');
+          }
           document.getElementById(`temperature-${roomName}`).textContent = data.temperature + '°';
           document.getElementById(`humidity-${roomName}`).textContent = data.humidity;
           document.getElementById(`gas-${roomName}`).textContent = data.gas;
           document.getElementById(`oxygen-${roomName}`).textContent = data.oxygen;
         })
-        .catch(error => console.error('Error fetching data:', error));
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          document.getElementById(`temperature-${roomName}`).textContent = 'N/A';
+          document.getElementById(`humidity-${roomName}`).textContent = 'N/A';
+          document.getElementById(`gas-${roomName}`).textContent = 'N/A';
+          document.getElementById(`oxygen-${roomName}`).textContent = 'N/A';
+        });
     }
 
     // Function to update data for all rooms

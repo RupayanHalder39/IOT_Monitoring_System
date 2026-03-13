@@ -113,9 +113,13 @@
         `;
         container.appendChild(box);
 
-        fetch(`http://localhost:4115/api/daily-data?room_no=room1&timestamp=${date.toISOString().slice(0, 10)}`)
+        const API_BASE = window.__API_BASE_URL__ || 'http://localhost:4115';
+        fetch(`${API_BASE}/api/daily-data?room_no=room1&timestamp=${date.toISOString().slice(0, 10)}&_ts=${Date.now()}`, { cache: 'no-store' })
           .then(response => response.json())
           .then(data => {
+            if (!data || data.error || !data[0]) {
+              throw new Error(data && data.error ? data.error : 'No data');
+            }
             const roomData = data[0];
             document.getElementById(`max-temp${index}`).innerHTML = `Max: <strong>${roomData.avg_t_max}</strong>`;
             document.getElementById(`min-temp${index}`).innerHTML = `Min: <strong>${roomData.avg_t_min}</strong>`;
