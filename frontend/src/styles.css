@@ -108,6 +108,20 @@ nav {
   box-shadow: var(--shadow);
 }
 
+.theme-toggler button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.theme-toggler button.active {
+  background: rgba(132, 139, 200, 0.2);
+  color: var(--text);
+}
+
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -178,6 +192,45 @@ nav {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
+}
+
+.date-chip {
+  position: relative;
+  overflow: hidden;
+}
+
+.date-chip input[type="date"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dark-theme {
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+.dark-theme .sidebar {
+  background: #0b1220;
+}
+
+.dark-theme .content {
+  background: #0f172a;
+}
+
+.dark-theme .kpi,
+.dark-theme .history-grid,
+.dark-theme .chip,
+.dark-theme .theme-toggler {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.dark-theme .history-card h3,
+.dark-theme .kpi p,
+.dark-theme .section-title {
+  color: #cbd5f5;
 }
 
 @media (max-width: 1024px) {

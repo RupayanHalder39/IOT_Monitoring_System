@@ -26,34 +26,65 @@
 
     <script>
         const API_BASE = window.__API_BASE_URL__ || 'http://localhost:4115';
-        fetch(`${API_BASE}/api/hour-data?room_no=room1&timestamp=2024-03-28&_ts=${Date.now()}`, { cache: 'no-store' })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('data-body');
+        const params = new URLSearchParams(window.location.search);
+        const room = params.get('room') || 'room1';
+        const dateParam = params.get('date');
 
-                if (!data || data.error) {
-                    throw new Error(data && data.error ? data.error : 'No data');
-                }
-
-                data.forEach(entry => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${entry.last_updated}</td>
-                        <td>${entry.t_max}</td>
-                        <td>${entry.h_max}</td>
-                        <td>${entry.g_max}</td>
-                        <td>${entry.o_max}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-                const tbody = document.getElementById('data-body');
+        function renderRows(data) {
+            const tbody = document.getElementById('data-body');
+            tbody.innerHTML = '';
+            data.forEach(entry => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td colspan=\"5\">No data</td>`;
+                row.innerHTML = `
+                    <td>${entry.timestamp}</td>
+                    <td>${entry.temperature}</td>
+                    <td>${entry.humidity}</td>
+                    <td>${entry.gas}</td>
+                    <td>${entry.oxygen}</td>
+                `;
                 tbody.appendChild(row);
             });
+        }
+
+        function renderNoData() {
+            const tbody = document.getElementById('data-body');
+            tbody.innerHTML = '';
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan=\"5\">No data</td>`;
+            tbody.appendChild(row);
+        }
+
+        function fetchByDate(date) {
+            fetch(`${API_BASE}/api/room-history?room=${room}&date=${date}&_ts=${Date.now()}`, { cache: 'no-store' })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.error || data.length === 0) {
+                        throw new Error(data && data.error ? data.error : 'No data');
+                    }
+                    renderRows(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    renderNoData();
+                });
+        }
+
+        if (dateParam) {
+            fetchByDate(dateParam);
+        } else {
+            fetch(`${API_BASE}/api/latest-room-date?room=${room}&_ts=${Date.now()}`, { cache: 'no-store' })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.error || !data.date) {
+                        throw new Error(data && data.error ? data.error : 'No latest date');
+                    }
+                    fetchByDate(data.date);
+                })
+                .catch(error => {
+                    console.error('Error fetching latest date:', error);
+                    renderNoData();
+                });
+        }
     </script>
 </body>
 </html>
